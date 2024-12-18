@@ -2,7 +2,7 @@ from pizza_data_class import pizzaSlice
 import numpy as np
 
 if __name__ == "__main__":
-     pizza_path = "/mnt/robotdata/datasets/pizza_robot/"
+    pizza_path = "/mnt/robotdata/datasets/pizza_robot/"
     # pizza_path = "/datahdd_8T/sep_pizza_builder/pizza_dataset/"
     pizza = pizzaSlice(data_path=pizza_path)
 
