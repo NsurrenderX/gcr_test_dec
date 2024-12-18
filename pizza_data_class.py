@@ -21,7 +21,7 @@ class pizzaSlice():
         self.slices, self.aligned_data, self.aligned_joints = self.complete_data_in_charts(view = view)
         self.chosen_ids = self.correct_img_indices()
         # self.action, self.status = self.get_action()
-        self.prompts = self.get_prompt()
+        # self.prompts = self.get_prompt()
         self.action = self.get_aligned_action()
         self.action_wo_gripper = self.get_aligned_action(seventh_dim_keep=True)
         self.mean, self.std = self.get_mean_std()
