@@ -13,15 +13,25 @@ from PIL import Image
 from tqdm import tqdm
 from scipy.spatial.transform import Rotation as R
 
+class ndarrayEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        return json.JSONEncoder.default(self, o)
+
 class pizzaSlice():
-    def __init__(self, data_path, clip_path = None, view = 0):
+    def __init__(self, data_path, clip_path = None, view = 0, meta_path = None):
         self.view = view
         self.data_path = data_path
-        # self.slices = self.data_metainfo()
-        self.slices, self.aligned_data, self.aligned_joints = self.complete_data_in_charts(view = view)
-        self.chosen_ids = self.correct_img_indices()
-        # self.action, self.status = self.get_action()
-        # self.prompts = self.get_prompt()
+        if meta_path is None:
+            # self.slices = self.data_metainfo()
+            self.slices, self.aligned_data, self.aligned_joints = self.complete_data_in_charts(view = view)
+            self.chosen_ids = self.correct_img_indices()
+            # self.action, self.status = self.get_action()
+            self.prompts = self.get_prompt()
+        else:
+            self.read_meta(meta_path)
+            
         self.action = self.get_aligned_action()
         self.action_wo_gripper = self.get_aligned_action(seventh_dim_keep=True)
         self.mean, self.std = self.get_mean_std()
@@ -31,8 +41,32 @@ class pizzaSlice():
         self.stds_wo_gripper[6] = 1
         if clip_path is not None:
             self.clip_path = clip_path
-        
-
+    
+    def norm_numpylize(self, data:dict):
+        for k, v in data.items():
+            if isinstance(v, list):
+                data[k] = np.array(v)
+            elif isinstance(v, dict):
+                data[k] = self.norm_numpylize(v)
+        return data
+    
+    def aligned_data_numpylize(self, data:dict):
+        for k, v in data.items():
+            for kk, vv in v.items():
+                ndarray_vv = []
+                for vvv in vv:
+                    ndarray_vv.append(np.asanyarray(vvv).astype(np.float32))
+                data[k][kk] = ndarray_vv
+        return data
+    
+    def read_meta(self, meta_path:str):
+        with open(meta_path, 'r') as f:
+            meta = json.load(f)
+        self.slices = self.norm_numpylize(meta['slices'])
+        self.aligned_data = self.aligned_data_numpylize(meta['aligned_data'])
+        self.aligned_joints = self.aligned_data_numpylize(meta['aligned_joints'])
+        self.chosen_ids = meta['chosen_ids']
+        self.prompts = meta['prompts']
 
     def data_metainfo(self):
         # each_task = range(1, 23)
@@ -773,4 +807,87 @@ class pizzaSlice():
         std = np.std(action_np, axis=0)
         print("Backward search count: ", back)
         return merged_pack, mean, std
-                    
+
+if __name__ == "__main__":
+    
+    meta_save = 'meta_view0.json'
+    pizza1 = pizzaSlice(data_path='/datahdd_8T/sep_pizza_builder/pizza_dataset/')
+    slice1 = pizza1.slices
+    aligned_data1 = pizza1.aligned_data
+    aligned_joints1 = pizza1.aligned_joints
+    prompts1 = pizza1.prompts
+    chosen_ids1 = pizza1.chosen_ids
+    
+    pizza2 = pizzaSlice(data_path='/datahdd_8T/sep_pizza_builder/pizza_dataset/', meta_path='meta_view0.json')
+    slice2 = pizza2.slices
+    aligned_data2 = pizza2.aligned_data
+    aligned_joints2 = pizza2.aligned_joints
+    prompts2 = pizza2.prompts
+    chosen_ids2 = pizza2.chosen_ids
+
+    # print(slice1['1']['20230913195953'])
+    # print(isinstance(slice1['1']['20230913195953'][0], np.ndarray))
+    slice_equal = True
+
+    for k, v in slice1.items():
+        for kk, vv in v.items():
+            for i in range(len(vv)):
+                if (vv[i] == slice2[k][kk][i]).all():
+                    continue
+                else:
+                    slice_equal = False
+                    print(f"Item {kk} in {k} Not Equal: ", vv[i],slice2[k][kk][i])
+                    print('------------------------')
+    print("Slice equal stat: ", slice_equal)
+
+    # print((slice1 == slice2).all())
+    aligned_data_equal = True
+    for k, v in aligned_data1.items():
+        for kk, vv in v.items():
+            for i in range(len(vv)):
+                # print(isinstance(vv[i][0], np.ndarray), isinstance(aligned_data2[k][kk][i][0], np.ndarray))
+                # break
+                for j in range(len(vv[i])):
+                    if (vv[i][j] == aligned_data2[k][kk][i][j]).all() :
+                        continue
+                    else:
+                        aligned_data_equal = False
+                        print(f"Item {kk} in {k} Not Equal: ", vv[i][j],aligned_data2[k][kk][i][j])
+                        print('------------------------')
+    aligned_joints_equal = True
+    print("Aligned data equal stat: ", aligned_data_equal)
+    # print(aligned_joints1['1']['20230913195953'][0])
+    # print(aligned_joints2['1']['20230913195953'][0])
+    def joint_equal(joint1:np.ndarray, joint2:np.ndarray):
+        delta = np.abs(joint1 - joint2)
+        if delta.max() > 0.000001:
+            return False
+        else:
+            return True
+    for k, v in aligned_joints1.items():
+        for kk, vv in v.items():
+            for i in range(len(vv)):
+                for j in range(len(vv[i])):
+                    if joint_equal(vv[i][j],aligned_joints2[k][kk][i][j]):
+                        continue
+                    else:
+                        aligned_joints_equal = False
+                        print(f"Item {kk} in {k} Not Equal: ", vv[i][j],aligned_joints2[k][kk][i][j])
+                        print('------------------------')
+    print("Aligned joints equal stat: ", aligned_joints_equal)
+
+    chosen_ids_equal = True
+
+    for k, v in chosen_ids1.items():
+        for kk, vv in v.items():
+            if vv == chosen_ids2[k][kk]:
+                continue
+            else:
+                chosen_ids_equal = False
+                print(f"Item {kk} in {k} Not Equal: ", vv,chosen_ids2[k][kk])
+                print('------------------------')
+            
+    print("Chosen ids equal stat: ", chosen_ids_equal)
+
+    prompts_equal = (prompts1 == prompts2)
+    print("Prompts equal stat: ", prompts_equal)
