@@ -30,7 +30,7 @@ if __name__ == "__main__":
     # print("small_epi", small_epi)
     # print("tiny_epi", tiny_epi)
     # print("ex_tiny_epi", ex_tiny_epi)
-    print("count_epi", count_epi)
+    # print("count_epi", count_epi)
     img = cv2.imread("/mnt/robotdata/datasets/pizza_robot/11/20231010170710/images/right_rgb/042.jpg")
     cv2.imwrite("/mnt/wangxiaofa/test.jpg", img)
     # print(pizza.chosen_ids['1'].keys())
