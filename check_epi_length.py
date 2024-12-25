@@ -1,35 +1,38 @@
 from pizza_data_class import pizzaSlice
 import numpy as np
+import cv2
 
 if __name__ == "__main__":
-    pizza_path = "/mnt/robotdata/datasets/pizza_robot/"
-    # pizza_path = "/datahdd_8T/sep_pizza_builder/pizza_dataset/"
-    pizza = pizzaSlice(data_path=pizza_path)
+    # pizza_path = "/mnt/robotdata/datasets/pizza_robot/"
+    # # pizza_path = "/datahdd_8T/sep_pizza_builder/pizza_dataset/"
+    # pizza = pizzaSlice(data_path=pizza_path)
 
-    small_epi = 0
-    tiny_epi = 0
-    ex_tiny_epi = 0
-    count_epi = 0
+    # small_epi = 0
+    # tiny_epi = 0
+    # ex_tiny_epi = 0
+    # count_epi = 0
 
-    for task in range(1, 23):
-        task_id = str(task)
-        if task == 3 or task == 19 or task == 20:
-            continue
-        choosen_indices = pizza.chosen_ids[task_id]
-        for episode, indices in choosen_indices.items():
-            # print(task, episode, len(indices))
-            if len(indices) < 128:
-                small_epi += 1
-                if len(indices) < 65:
-                    tiny_epi += 1
-                    if len(indices) < 32:
-                        ex_tiny_epi += 1
-            count_epi += 1
+    # for task in range(1, 23):
+    #     task_id = str(task)
+    #     if task == 3 or task == 19 or task == 20:
+    #         continue
+    #     choosen_indices = pizza.chosen_ids[task_id]
+    #     for episode, indices in choosen_indices.items():
+    #         # print(task, episode, len(indices))
+    #         if len(indices) < 128:
+    #             small_epi += 1
+    #             if len(indices) < 65:
+    #                 tiny_epi += 1
+    #                 if len(indices) < 32:
+    #                     ex_tiny_epi += 1
+    #         count_epi += 1
 
-    print("small_epi", small_epi)
-    print("tiny_epi", tiny_epi)
-    print("ex_tiny_epi", ex_tiny_epi)
+    # print("small_epi", small_epi)
+    # print("tiny_epi", tiny_epi)
+    # print("ex_tiny_epi", ex_tiny_epi)
     print("count_epi", count_epi)
+    img = cv2.imread("/mnt/robotdata/datasets/pizza_robot/11/20231010170710/images/right_rgb/042.jpg")
+    cv2.imsave("/mnt/wangxiaofa/test.jpg")
     # print(pizza.chosen_ids['1'].keys())
     # print(len(pizza.chosen_ids['1'].keys()))
     # epi_list = np.asanyarray(list(pizza.chosen_ids['1'].keys()))
